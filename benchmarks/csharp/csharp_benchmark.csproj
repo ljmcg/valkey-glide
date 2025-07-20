@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net8.0;net6.0</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <LangVersion>preview</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)../../csharp/sources/Valkey.Glide/Valkey.Glide.csproj" />
+    <ProjectReference Include="..\..\..\RCAH\RCAH\RCAH.csproj" />
   </ItemGroup>
 
   <ItemGroup>

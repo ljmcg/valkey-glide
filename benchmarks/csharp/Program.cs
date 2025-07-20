@@ -331,6 +331,31 @@ public static class MainClass
                 client.Dispose();
             }
         }
+
+        if (clientsToRun == "all")
+        {
+            ClientWrapper[] clients = await CreateClients(clientCount, () =>
+            {
+                RCAH.TestRig connection = new RCAH.TestRig(host, port);
+                return Task.FromResult<(Func<string, Task<string?>>, Func<string, string, Task>, Action)>(
+                    (async (key) => await connection.GetValue(key),
+                     async (key, value) => await connection.SetValue(key, value),
+                     async () => await connection.DisposeAsync() ));
+            });
+            await RunClients(
+                clients,
+                "RCAH",
+                isCluster,
+                totalCommands,
+                dataSize,
+                numOfConcurrentTasks
+            );
+
+            foreach (ClientWrapper client in clients)
+            {
+                client.Dispose();
+            }
+        }
     }
 
     private static int NumberOfIterations(int num_of_concurrent_tasks) => Math.Min(Math.Max(100000, num_of_concurrent_tasks * 10000), 10000000);
