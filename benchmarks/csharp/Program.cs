@@ -127,13 +127,13 @@ public static class MainClass
             switch (action)
             {
                 case ChosenAction.GET_EXISTING:
-                    _ = await client.Get(GenerateKeySet());
+                    _ = await client.Get(GenerateKeySet()).ConfigureAwait(false);
                     break;
                 case ChosenAction.GET_NON_EXISTING:
-                    _ = await client.Get(GenerateKeyGet());
+                    _ = await client.Get(GenerateKeyGet()).ConfigureAwait(false);
                     break;
                 case ChosenAction.SET:
-                    await client.Set(GenerateKeySet(), data);
+                    await client.Set(GenerateKeySet(), data).ConfigureAwait(false);
                     break;
                 default:
                     break;
@@ -161,7 +161,7 @@ public static class MainClass
                 RedisBenchmark(clients, total_commands, data, action_latencies)
             );
         }
-        await Task.WhenAll(running_tasks);
+        await Task.WhenAll(running_tasks).ConfigureAwait(false);
         stopwatch.Stop();
         return stopwatch.ElapsedMilliseconds;
     }
@@ -200,7 +200,7 @@ public static class MainClass
             data,
             num_of_concurrent_tasks,
             action_latencies
-        );
+        ).ConfigureAwait(false);
         double tps = Math.Round(s_started_tasks_counter / ((double)elapsed_milliseconds / 1000));
 
         ConcurrentBag<double> get_non_existing_latencies = action_latencies[ChosenAction.GET_NON_EXISTING];
@@ -253,10 +253,10 @@ public static class MainClass
     {
         IEnumerable<Task<ClientWrapper>> tasks = Enumerable.Range(0, clientCount).Select(async (_) =>
         {
-            (Func<string, Task<string?>>, Func<string, string, Task>, Action) tuple = await clientCreation();
+            (Func<string, Task<string?>>, Func<string, string, Task>, Action) tuple = await clientCreation().ConfigureAwait(false);
             return new ClientWrapper(tuple.Item1, tuple.Item2, tuple.Item3);
         });
-        return await Task.WhenAll(tasks);
+        return await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
     private static async Task RunWithParameters(int totalCommands,
@@ -294,7 +294,7 @@ public static class MainClass
                     },
                      async (key, value) => await glideClient.StringSetAsync(key, value),
                      () => glideClient.Dispose()));
-            });
+            }).ConfigureAwait(false);
 
             await RunClients(
                 clients,
@@ -303,7 +303,7 @@ public static class MainClass
                 totalCommands,
                 dataSize,
                 numOfConcurrentTasks
-            );
+            ).ConfigureAwait(false);
         }
 
         if (clientsToRun == "all")
@@ -316,7 +316,7 @@ public static class MainClass
                         (async (key) => await db.StringGetAsync(key),
                          async (key, value) => await db.StringSetAsync(key, value),
                          () => connection.Dispose()));
-                });
+                }).ConfigureAwait(false);
             await RunClients(
                 clients,
                 "StackExchange.Redis",
@@ -324,7 +324,7 @@ public static class MainClass
                 totalCommands,
                 dataSize,
                 numOfConcurrentTasks
-            );
+            ).ConfigureAwait(false);
 
             foreach (ClientWrapper client in clients)
             {
@@ -349,7 +349,7 @@ public static class MainClass
                 totalCommands,
                 dataSize,
                 numOfConcurrentTasks
-            );
+            ).ConfigureAwait(false);
 
             foreach (ClientWrapper client in clients)
             {
@@ -372,7 +372,7 @@ public static class MainClass
         foreach ((int concurrentTasks, int dataSize, int clientCount) in product)
         {
             int iterations = options.Minimal ? 1000 : NumberOfIterations(concurrentTasks);
-            await RunWithParameters(iterations, dataSize, concurrentTasks, options.ClientsToRun, options.Host, options.Port, clientCount, options.Tls, options.ClusterMode);
+            await RunWithParameters(iterations, dataSize, concurrentTasks, options.ClientsToRun, options.Host, options.Port, clientCount, options.Tls, options.ClusterMode).ConfigureAwait(false);
         }
 
         PrintResults(options.ResultsFile);
