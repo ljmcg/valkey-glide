@@ -27,14 +27,14 @@ runCsharp=0
 runJava=0
 runGo=0
 runRust=0
-concurrentTasks="1 10 100 1000"
-dataSize="100 4000"
+concurrentTasks="1 10 100"
+dataSize="100"
 clientCount="1"
 chosenClients="all"
 host="localhost"
 port=6379
 tlsFlag="--tls"
-dotnetFramework="net6.0"
+dotnetFramework="net9.0"
 
 function runPythonBenchmark(){
   # generate protobuf files
