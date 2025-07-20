@@ -340,7 +340,7 @@ public static class MainClass
                 return Task.FromResult<(Func<string, Task<string?>>, Func<string, string, Task>, Action)>(
                     (async (key) => await connection.GetValue(key),
                      async (key, value) => await connection.SetValue(key, value),
-                     async () => await connection.DisposeAsync() ));
+                     async () => await connection.DisposeAsync()));
             });
             await RunClients(
                 clients,
