@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "csharp_benchmark": {
+      "commandName": "Project",
+      "commandLineArgs": "-l non_glide -c 10 100 -h 192.168.5.112"
+    },
+    "profiling": {
+      "commandName": "Project",
+      "commandLineArgs": "-m -l rcah --noresults -c 100 -h 192.168.5.112"
+    },
+    "1000 clients": {
+      "commandName": "Project",
+      "commandLineArgs": "-l non_glide -c 1000 -h 192.168.5.112"
+    }
+  }
+}

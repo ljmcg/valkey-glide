@@ -21,6 +21,9 @@ public static class MainClass
 
     public class CommandLineOptions
     {
+        [Option("noresults", Required = false, HelpText = "Disable results file output")]
+        public bool NoResults { get; set; } = false;
+
         [Option('r', "resultsFile", Required = false, HelpText = "Set the file to which the JSON results are written.")]
         public string ResultsFile { get; set; } = "../results/csharp-results.json";
 
@@ -229,31 +232,34 @@ public static class MainClass
         BenchJsonResults.Add(result);
     }
 
-    private class ClientWrapper : IDisposable
+    private class ClientWrapper : IAsyncDisposable
     {
-        internal ClientWrapper(Func<string, Task<string?>> get, Func<string, string, Task> set, Action disposalFunction)
+        internal ClientWrapper(Func<string, Task<string?>> get, Func<string, string, Task> set, Func<Task> disposalFunction)
         {
             Get = get;
             Set = set;
             _disposalFunction = disposalFunction;
         }
 
-        public void Dispose() => _disposalFunction();
+        public async ValueTask DisposeAsync()
+        {
+            await _disposalFunction();
+        }
 
         internal Func<string, Task<string?>> Get;
         internal Func<string, string, Task> Set;
 
-        private readonly Action _disposalFunction;
+        private readonly Func<Task> _disposalFunction;
     }
 
     private static async Task<ClientWrapper[]> CreateClients(int clientCount,
         Func<Task<(Func<string, Task<string?>>,
                    Func<string, string, Task>,
-                   Action)>> clientCreation)
+                   Func<Task>)>> clientCreation)
     {
         IEnumerable<Task<ClientWrapper>> tasks = Enumerable.Range(0, clientCount).Select(async (_) =>
         {
-            (Func<string, Task<string?>>, Func<string, string, Task>, Action) tuple = await clientCreation().ConfigureAwait(false);
+            (Func<string, Task<string?>>, Func<string, string, Task>, Func<Task>) tuple = await clientCreation().ConfigureAwait(false);
             return new ClientWrapper(tuple.Item1, tuple.Item2, tuple.Item3);
         });
         return await Task.WhenAll(tasks).ConfigureAwait(false);
@@ -286,14 +292,14 @@ public static class MainClass
                         .WithAddress(host, port).WithTls(useTLS).Build();
                     glideClient = GlideClusterClient.CreateClient(config).GetAwaiter().GetResult();
                 }
-                return Task.FromResult<(Func<string, Task<string?>>, Func<string, string, Task>, Action)>(
+                return Task.FromResult<(Func<string, Task<string?>>, Func<string, string, Task>, Func<Task>)>(
                     (async (key) =>
                     {
                         ValkeyValue result = await glideClient.StringGetAsync(key);
                         return result.IsNull ? null : result.ToString();
                     },
                      async (key, value) => await glideClient.StringSetAsync(key, value),
-                     () => glideClient.Dispose()));
+                     async () => glideClient.Dispose()));
             }).ConfigureAwait(false);
 
             await RunClients(
@@ -306,16 +312,16 @@ public static class MainClass
             ).ConfigureAwait(false);
         }
 
-        if (clientsToRun == "all")
+        if (clientsToRun is "all" or "non_glide")
         {
             ClientWrapper[] clients = await CreateClients(clientCount, () =>
                 {
                     SER_Connection connection = SER_Connection.Connect(GetAddressForStackExchangeRedis(host, port, useTLS));
                     SER_Db db = connection.GetDatabase();
-                    return Task.FromResult<(Func<string, Task<string?>>, Func<string, string, Task>, Action)>(
+                    return Task.FromResult<(Func<string, Task<string?>>, Func<string, string, Task>, Func<Task>)>(
                         (async (key) => await db.StringGetAsync(key),
                          async (key, value) => await db.StringSetAsync(key, value),
-                         () => connection.Dispose()));
+                         async () => connection.Dispose()));
                 }).ConfigureAwait(false);
             await RunClients(
                 clients,
@@ -328,16 +334,16 @@ public static class MainClass
 
             foreach (ClientWrapper client in clients)
             {
-                client.Dispose();
+                await client.DisposeAsync();
             }
         }
 
-        if (clientsToRun is "all" or "rcah")
+        if (clientsToRun is "all" or "rcah" or "non_glide")
         {
             ClientWrapper[] clients = await CreateClients(clientCount, () =>
             {
                 RCAH.TestRig connection = new RCAH.TestRig(host, port);
-                return Task.FromResult<(Func<string, Task<string?>>, Func<string, string, Task>, Action)>(
+                return Task.FromResult<(Func<string, Task<string?>>, Func<string, string, Task>, Func<Task>)>(
                     (async (key) => await connection.GetValue(key),
                      async (key, value) => await connection.SetValue(key, value),
                      async () => await connection.DisposeAsync()));
@@ -353,7 +359,7 @@ public static class MainClass
 
             foreach (ClientWrapper client in clients)
             {
-                client.Dispose();
+                await client.DisposeAsync();
             }
         }
     }
@@ -371,10 +377,12 @@ public static class MainClass
             options.ClientCount.Select(clientCount => (concurrentTasks, options.DataSize, clientCount))).Where(tuple => tuple.concurrentTasks >= tuple.clientCount);
         foreach ((int concurrentTasks, int dataSize, int clientCount) in product)
         {
-            int iterations = options.Minimal ? 1000 : NumberOfIterations(concurrentTasks);
+            int iterations = options.Minimal ? 100000 : NumberOfIterations(concurrentTasks);
             await RunWithParameters(iterations, dataSize, concurrentTasks, options.ClientsToRun, options.Host, options.Port, clientCount, options.Tls, options.ClusterMode).ConfigureAwait(false);
         }
-
-        PrintResults(options.ResultsFile);
+        if (!options.NoResults)
+        {
+            PrintResults(options.ResultsFile);
+        }
     }
 }
