@@ -312,6 +312,8 @@ public static class MainClass
             ).ConfigureAwait(false);
         }
 
+        Thread.Sleep(2000);
+
         if (clientsToRun is "all" or "non_glide")
         {
             ClientWrapper[] clients = await CreateClients(clientCount, () =>
@@ -338,11 +340,13 @@ public static class MainClass
             }
         }
 
+        Thread.Sleep(2000);
+
         if (clientsToRun is "all" or "rcah" or "non_glide")
         {
             ClientWrapper[] clients = await CreateClients(clientCount, () =>
             {
-                RCAH.TestRig connection = new RCAH.TestRig(host, port);
+                RCAH.TestRig2 connection = new RCAH.TestRig2(host, port);
                 return Task.FromResult<(Func<string, Task<string?>>, Func<string, string, Task>, Func<Task>)>(
                     (async (key) => await connection.GetValue(key),
                      async (key, value) => await connection.SetValue(key, value),
