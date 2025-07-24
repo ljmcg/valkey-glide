@@ -177,6 +177,7 @@ public static class MainClass
             {prefix + "_p50_latency", CalculateLatency(latencies, 0.5)},
             {prefix + "_p90_latency", CalculateLatency(latencies, 0.9)},
             {prefix + "_p99_latency", CalculateLatency(latencies, 0.99)},
+            {prefix + "_p9999_latency", CalculateLatency(latencies, 0.9999)},
             {prefix + "_average_latency", Math.Round(latencies.Average(), 3)},
             {prefix + "_std_dev", latencies.StandardDeviation()},
         };
@@ -312,9 +313,7 @@ public static class MainClass
             ).ConfigureAwait(false);
         }
 
-        Thread.Sleep(2000);
-
-        if (clientsToRun is "all" or "non_glide")
+        if (clientsToRun is "all" or "non_glide" or "stackex")
         {
             ClientWrapper[] clients = await CreateClients(clientCount, () =>
                 {
@@ -339,8 +338,6 @@ public static class MainClass
                 await client.DisposeAsync();
             }
         }
-
-        Thread.Sleep(2000);
 
         if (clientsToRun is "all" or "rcah" or "non_glide")
         {
@@ -368,7 +365,7 @@ public static class MainClass
         }
     }
 
-    private static int NumberOfIterations(int num_of_concurrent_tasks) => Math.Min(Math.Max(100000, num_of_concurrent_tasks * 10000), 10000000);
+    private static int NumberOfIterations(int num_of_concurrent_tasks) => Math.Min(Math.Max(100000, num_of_concurrent_tasks * 30000), 10000000);
 
     public static async Task Main(string[] args)
     {

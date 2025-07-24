@@ -11,6 +11,18 @@
     "1000 clients": {
       "commandName": "Project",
       "commandLineArgs": "-l non_glide -c 1000 -h 192.168.5.112"
+    },
+    "memory profileing rcah": {
+      "commandName": "Project",
+      "commandLineArgs": "-l rcah --noresults -c 100 -h 192.168.5.112"
+    },
+    "memory profiling stackex": {
+      "commandName": "Project",
+      "commandLineArgs": "-l stackex --noresults -c 100 -h 192.168.5.112"
+    },
+    "bench 2 clients": {
+      "commandName": "Project",
+      "commandLineArgs": "-l non_glide -c 10 100 -h 192.168.5.112 -C 2"
     }
   }
 }
