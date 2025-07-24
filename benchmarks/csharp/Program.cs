@@ -1,15 +1,15 @@
 // Copyright Valkey GLIDE Project Contributors - SPDX Identifier: Apache-2.0
 
+using CommandLine;
+using LinqStatistics;
+using OpenTelemetry;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime;
 using System.Text.Json;
-
-using CommandLine;
-
-using LinqStatistics;
-
 using static Valkey.Glide.ConnectionConfiguration;
-
 using SER_Connection = StackExchange.Redis.ConnectionMultiplexer;
 using SER_Db = StackExchange.Redis.IDatabase;
 
@@ -276,8 +276,10 @@ public static class MainClass
         bool useTLS,
         bool isCluster)
     {
+        
         if (clientsToRun is "all" or "glide")
         {
+            GC.Collect();
             ClientWrapper[] clients = await CreateClients(clientCount, () =>
             {
                 BaseClient glideClient;
@@ -315,6 +317,7 @@ public static class MainClass
 
         if (clientsToRun is "all" or "non_glide" or "stackex")
         {
+            GC.Collect();
             ClientWrapper[] clients = await CreateClients(clientCount, () =>
                 {
                     SER_Connection connection = SER_Connection.Connect(GetAddressForStackExchangeRedis(host, port, useTLS));
@@ -341,6 +344,7 @@ public static class MainClass
 
         if (clientsToRun is "all" or "rcah" or "non_glide")
         {
+            GC.Collect();
             ClientWrapper[] clients = await CreateClients(clientCount, () =>
             {
                 RCAH.TestRig2 connection = new RCAH.TestRig2(host, port);
@@ -369,6 +373,17 @@ public static class MainClass
 
     public static async Task Main(string[] args)
     {
+
+        /*using var tracerProvider = Sdk.CreateTracerProviderBuilder()
+            .AddSource("ljmcg.RCAH")
+            .ConfigureResource(r => r.AddService("valkey-driver"))
+            .AddZipkinExporter(o =>
+            {
+                o.Endpoint = new Uri("http://localhost:9411/api/v2/spans");
+            })
+            .Build();*/
+
+        GCSettings.LatencyMode = System.Runtime.GCLatencyMode.SustainedLowLatency;
         CommandLineOptions options = new();
         _ = Parser.Default
             .ParseArguments<CommandLineOptions>(args).WithParsed(parsed => options = parsed);

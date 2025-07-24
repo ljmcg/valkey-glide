@@ -6,7 +6,7 @@
     },
     "profiling": {
       "commandName": "Project",
-      "commandLineArgs": "-m -l rcah --noresults -c 100 -h 192.168.5.112"
+      "commandLineArgs": "-l rcah --noresults -c 100 -h 192.168.5.112 --clientCount 2"
     },
     "1000 clients": {
       "commandName": "Project",
